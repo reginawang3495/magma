@@ -17,6 +17,11 @@ import (
 	"crypto/rsa"
 	"flag"
 
+	"magma/orc8r/cloud/go/blobstore"
+	"magma/orc8r/cloud/go/services/bootstrapper/servicers/registration"
+	"magma/orc8r/cloud/go/sqorc"
+	storage2 "magma/orc8r/cloud/go/storage"
+
 	"github.com/golang/glog"
 
 	"magma/orc8r/cloud/go/orc8r"
@@ -37,6 +42,20 @@ func main() {
 		glog.Fatalf("Error creating service: %+v", err)
 	}
 
+	bs := createBootstrapperServicer()
+	crs, rs := createRegistrationServicers()
+
+	protos.RegisterBootstrapperServer(srv.GrpcServer, bs)
+	protos.RegisterCloudRegistrationServer(srv.GrpcServer, crs)
+	protos.RegisterRegistrationServer(srv.GrpcServer, rs)
+
+	err = srv.Run()
+	if err != nil {
+		glog.Fatalf("Error running service: %+v", err)
+	}
+}
+
+func createBootstrapperServicer() (*servicers.BootstrapperServer) {
 	key, err := key.ReadKey(*keyFilepath)
 	if err != nil {
 		glog.Fatalf("Error reading bootstrapper private key: %+v", err)
@@ -50,10 +69,30 @@ func main() {
 	if err != nil {
 		glog.Fatalf("Error creating bootstrapper servicer: %+v", err)
 	}
-	protos.RegisterBootstrapperServer(srv.GrpcServer, servicer)
+	return servicer
+}
 
-	err = srv.Run()
+func createRegistrationServicers() (protos.CloudRegistrationServer, protos.RegistrationServer) {
+	db, err := sqorc.Open(storage2.GetSQLDriver(), storage2.GetDatabaseSource())
 	if err != nil {
-		glog.Fatalf("Error running service: %+v", err)
+		glog.Fatalf("Failed to connect to database: %s", err)
 	}
+	factory := blobstore.NewSQLStoreFactory(bootstrapper.DBTableName, db, sqorc.GetSqlBuilder())
+	err = factory.InitializeFactory()
+	if err != nil {
+		glog.Fatalf("Error initializing tenant database: %s", err)
+	}
+	store := registration.NewBlobstoreStore(factory)
+
+	crs, err := registration.NewCloudRegistrationServicer(store)
+	if err != nil {
+		glog.Fatalf("Error creating cloud registration servicer: %s", err)
+	}
+
+	rs, err := registration.NewRegistrationServer(store)
+	if err != nil {
+		glog.Fatalf("Error creating registration servicer: %s", err)
+	}
+
+	return crs, rs
 }
