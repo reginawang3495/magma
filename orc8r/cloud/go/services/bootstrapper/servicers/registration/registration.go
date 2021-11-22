@@ -64,7 +64,7 @@ func registerDevice(ti protos.TokenInfo, hwid protos.AccessGatewayID, challengeK
 	cKey := strfmt.Base64(challengeKey.Key)
 	gatewayRecord := &models2.GatewayDevice{HardwareID: hwid.Id,
 		Key: &models2.ChallengeKey{KeyType: challengeKey.KeyType.String(),
-			Key: &cKey}} // QUESTION: hardware ID? are you sure? seems wrong IMO since it's used 2 lines above; should be logicalID?
+			Key: &cKey}}
 	err := device.RegisterDevice(context.Background(), ti.Gateway.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
 	return err
 }
