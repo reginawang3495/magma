@@ -39,7 +39,7 @@ func (rs *registrationServicer) Register(c context.Context, request *protos.Regi
 	if tokenInfo == nil {
 		return formatRegisterResponseError(fmt.Sprintf("Could not find token info from nonce %v", nonce)), nil
 	}
-	if tokenTimedOut(tokenInfo) {
+	if isTokenExpired(tokenInfo) {
 		return formatRegisterResponseError("Token has timed out. Please get another one."), nil
 	}
 
@@ -48,7 +48,7 @@ func (rs *registrationServicer) Register(c context.Context, request *protos.Regi
 		return formatRegisterResponseError(fmt.Sprintf("Error registering device: %v", err)), nil
 	}
 
-	controlProxy, err := getControlProxy(tokenInfo.Gateway.NetworkId)
+	controlProxy, err := getControlProxy(tokenInfo.GatewayPreregisterInfo.NetworkId)
 	if err != nil {
 		return formatRegisterResponseError(fmt.Sprintf("Error getting control proxy: %v", err)), nil
 	}
@@ -65,7 +65,7 @@ func registerDevice(ti protos.TokenInfo, hwid protos.AccessGatewayID, challengeK
 	gatewayRecord := &models2.GatewayDevice{HardwareID: hwid.Id,
 		Key: &models2.ChallengeKey{KeyType: challengeKey.KeyType.String(),
 			Key: &cKey}}
-	err := device.RegisterDevice(context.Background(), ti.Gateway.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
+	err := device.RegisterDevice(context.Background(), ti.GatewayPreregisterInfo.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
 	return err
 }
 
