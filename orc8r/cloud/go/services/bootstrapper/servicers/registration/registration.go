@@ -61,6 +61,7 @@ func registerDevice(ti protos.GatewayDeviceInfo, hwid protos.AccessGatewayID, ch
 	return err
 }
 
+// TODO(reginawang3495) create ticket for tenants endpoint `GetControlProxyForNetworkID` for exhaustive search
 func getControlProxy(networkID string) (string, error) {
 	ten, err := tenants.GetAllTenants(context.Background())
 	if err != nil {
