@@ -39,7 +39,7 @@ var (
 func main() {
 	srv, err := service.NewOrchestratorService(orc8r.ModuleName, bootstrapper.ServiceName)
 	if err != nil {
-		glog.Fatalf("Error creating service: %+v", err)
+		glog.Fatalf("error creating service: %+v", err)
 	}
 
 	bs := createBootstrapperServicer()
@@ -51,23 +51,23 @@ func main() {
 
 	err = srv.Run()
 	if err != nil {
-		glog.Fatalf("Error running service: %+v", err)
+		glog.Fatalf("error running service: %+v", err)
 	}
 }
 
 func createBootstrapperServicer() (*servicers.BootstrapperServer) {
 	key, err := key.ReadKey(*keyFilepath)
 	if err != nil {
-		glog.Fatalf("Error reading bootstrapper private key: %+v", err)
+		glog.Fatalf("error reading bootstrapper private key: %+v", err)
 	}
 	rsaPrivateKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
-		glog.Fatalf("Error coercing bootstrapper private key to RSA private key; actual type: %T", key)
+		glog.Fatalf("error coercing bootstrapper private key to RSA private key; actual type: %T", key)
 	}
 
 	servicer, err := servicers.NewBootstrapperServer(rsaPrivateKey)
 	if err != nil {
-		glog.Fatalf("Error creating bootstrapper servicer: %+v", err)
+		glog.Fatalf("error creating bootstrapper servicer: %+v", err)
 	}
 	return servicer
 }
@@ -75,23 +75,23 @@ func createBootstrapperServicer() (*servicers.BootstrapperServer) {
 func createRegistrationServicers() (protos.CloudRegistrationServer, protos.RegistrationServer) {
 	db, err := sqorc.Open(storage2.GetSQLDriver(), storage2.GetDatabaseSource())
 	if err != nil {
-		glog.Fatalf("Failed to connect to database: %s", err)
+		glog.Fatalf("failed to connect to database: %s", err)
 	}
-	factory := blobstore.NewSQLStoreFactory(bootstrapper.DBTableName, db, sqorc.GetSqlBuilder())
+	factory := blobstore.NewSQLStoreFactory(bootstrapper.BlobstoreTableName, db, sqorc.GetSqlBuilder())
 	err = factory.InitializeFactory()
 	if err != nil {
-		glog.Fatalf("Error initializing tenant database: %s", err)
+		glog.Fatalf("error initializing tenant database: %s", err)
 	}
 	store := registration.NewBlobstoreStore(factory)
 
 	crs, err := registration.NewCloudRegistrationServicer(store)
 	if err != nil {
-		glog.Fatalf("Error creating cloud registration servicer: %s", err)
+		glog.Fatalf("error creating cloud registration servicer: %s", err)
 	}
 
-	rs, err := registration.NewRegistrationServer(store)
+	rs, err := registration.NewRegistrationServicer()
 	if err != nil {
-		glog.Fatalf("Error creating registration servicer: %s", err)
+		glog.Fatalf("error creating registration servicer: %s", err)
 	}
 
 	return crs, rs
