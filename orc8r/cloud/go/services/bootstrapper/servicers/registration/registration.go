@@ -30,18 +30,18 @@ func (rs *registrationServicer) Register(c context.Context, request *protos.Regi
 	deviceInfo, err := bootstrapper.GetGatewayDeviceInfo(context.Background(), nonce)
 	if err != nil {
 		return formatRegisterResponseError(
-			fmt.Sprintf("Could not get device info from nonce %v: %v", nonce, err),
+			fmt.Sprintf("could not get device info from nonce %v: %v", nonce, err),
 		), nil
 	}
 
 	err = registerDevice(*deviceInfo, *request.Hwid, *request.ChallengeKey)
 	if err != nil {
-		return formatRegisterResponseError(fmt.Sprintf("Error registering device: %v", err)), nil
+		return formatRegisterResponseError(fmt.Sprintf("error registering device: %v", err)), nil
 	}
 
 	controlProxy, err := getControlProxy(deviceInfo.NetworkId)
 	if err != nil {
-		return formatRegisterResponseError(fmt.Sprintf("Error getting control proxy: %v", err)), nil
+		return formatRegisterResponseError(fmt.Sprintf("error getting control proxy: %v", err)), nil
 	}
 
 	res := &protos.RegisterResponse{
@@ -80,7 +80,7 @@ func getControlProxy(networkID string) (string, error) {
 	}
 
 	if tIDFound == false {
-		return "", status.Errorf(codes.NotFound, "TenantID for current NetworkID %d not found", networkID)
+		return "", status.Errorf(codes.NotFound, "tenantID for current NetworkID %d not found", networkID)
 	}
 
 	cp, err := tenants.GetControlProxy(context.Background(), tID)
