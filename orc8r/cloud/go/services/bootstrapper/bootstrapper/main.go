@@ -17,19 +17,18 @@ import (
 	"crypto/rsa"
 	"flag"
 
-	"magma/orc8r/cloud/go/blobstore"
-	"magma/orc8r/cloud/go/services/bootstrapper/servicers/registration"
-	bootstrapper_config "magma/orc8r/cloud/go/services/bootstrapper/config"
-
-	"magma/orc8r/cloud/go/sqorc"
-	storage2 "magma/orc8r/cloud/go/storage"
-
 	"github.com/golang/glog"
 
+	"magma/orc8r/cloud/go/blobstore"
 	"magma/orc8r/cloud/go/orc8r"
 	"magma/orc8r/cloud/go/service"
 	"magma/orc8r/cloud/go/services/bootstrapper"
+	bootstrapper_config "magma/orc8r/cloud/go/services/bootstrapper/config"
+
 	"magma/orc8r/cloud/go/services/bootstrapper/servicers"
+	"magma/orc8r/cloud/go/services/bootstrapper/servicers/registration"
+	"magma/orc8r/cloud/go/sqorc"
+	storage2 "magma/orc8r/cloud/go/storage"
 	"magma/orc8r/lib/go/protos"
 	"magma/orc8r/lib/go/security/key"
 )
@@ -57,7 +56,7 @@ func main() {
 	}
 }
 
-func createBootstrapperServicer() (*servicers.BootstrapperServer) {
+func createBootstrapperServicer() *servicers.BootstrapperServer {
 	key, err := key.ReadKey(*keyFilepath)
 	if err != nil {
 		glog.Fatalf("error reading bootstrapper private key: %+v", err)
@@ -74,7 +73,7 @@ func createBootstrapperServicer() (*servicers.BootstrapperServer) {
 	return servicer
 }
 
-func createRegistrationServicers() (protos.CloudRegistrationServer, protos.RegistrationServer) {
+func createRegistrationServicers(srv *service.OrchestratorService) (protos.CloudRegistrationServer, protos.RegistrationServer) {
 	db, err := sqorc.Open(storage2.GetSQLDriver(), storage2.GetDatabaseSource())
 	if err != nil {
 		glog.Fatalf("failed to connect to database: %s", err)
@@ -86,8 +85,12 @@ func createRegistrationServicers() (protos.CloudRegistrationServer, protos.Regis
 	}
 	store := registration.NewBlobstoreStore(factory)
 
-	singletonReindex := srv.Config.MustGetBool(bootstrapper_config.)
-	crs, err := registration.NewCloudRegistrationServicer(store, registration.GetRootCA(), srv.getConfi)
+	str, err := registration.GetRootCA()
+	if err != nil {
+		glog.Fatalf("failed to get rootCA: %s", err)
+	}
+	timeoutDurationInMinutes := srv.Config.MustGetBool(bootstrapper_config.TokenTimeoutDurationInMinutes)
+	crs, err := registration.NewCloudRegistrationServicer(store, str, timeoutDurationInMinutes)
 	if err != nil {
 		glog.Fatalf("error creating cloud registration servicer: %s", err)
 	}
