@@ -16,8 +16,18 @@ package main
 import (
 	"crypto/rsa"
 	"flag"
+<<<<<<< HEAD
 	"io/ioutil"
 	"time"
+=======
+
+	"magma/orc8r/cloud/go/blobstore"
+	"magma/orc8r/cloud/go/services/bootstrapper/servicers/registration"
+	bootstrapper_config "magma/orc8r/cloud/go/services/bootstrapper/config"
+
+	"magma/orc8r/cloud/go/sqorc"
+	storage2 "magma/orc8r/cloud/go/storage"
+>>>>>>> ad35509eb (save)
 
 	"github.com/golang/glog"
 
@@ -88,6 +98,7 @@ func createRegistrationServicers(srv *service.OrchestratorService) (protos.Cloud
 	}
 	store := registration.NewBlobstoreStore(factory)
 
+<<<<<<< HEAD
 	rootCA, err := getRootCA()
 	if err != nil {
 		glog.Fatalf("failed to get rootCA: %+v", err)
@@ -96,6 +107,10 @@ func createRegistrationServicers(srv *service.OrchestratorService) (protos.Cloud
 	timeoutDurationInMinutes := srv.Config.MustGetInt(bootstrapper_config.TokenTimeoutDurationInMinutes)
 	timeout := time.Duration(timeoutDurationInMinutes) * time.Minute
 	cloudRegistrationServicer, err := registration.NewCloudRegistrationServicer(store, rootCA, timeout)
+=======
+	singletonReindex := srv.Config.MustGetBool(bootstrapper_config.)
+	crs, err := registration.NewCloudRegistrationServicer(store, registration.GetRootCA(), srv.getConfi)
+>>>>>>> ad35509eb (save)
 	if err != nil {
 		glog.Fatalf("error creating cloud registration servicer: %+v", err)
 	}
