@@ -19,6 +19,8 @@ import (
 
 	"magma/orc8r/cloud/go/blobstore"
 	"magma/orc8r/cloud/go/services/bootstrapper/servicers/registration"
+	bootstrapper_config "magma/orc8r/cloud/go/services/bootstrapper/config"
+
 	"magma/orc8r/cloud/go/sqorc"
 	storage2 "magma/orc8r/cloud/go/storage"
 
@@ -84,7 +86,8 @@ func createRegistrationServicers() (protos.CloudRegistrationServer, protos.Regis
 	}
 	store := registration.NewBlobstoreStore(factory)
 
-	crs, err := registration.NewCloudRegistrationServicer(store)
+	singletonReindex := srv.Config.MustGetBool(bootstrapper_config.)
+	crs, err := registration.NewCloudRegistrationServicer(store, registration.GetRootCA(), srv.getConfi)
 	if err != nil {
 		glog.Fatalf("error creating cloud registration servicer: %s", err)
 	}
