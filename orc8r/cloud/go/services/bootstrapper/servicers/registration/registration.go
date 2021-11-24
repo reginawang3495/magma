@@ -8,7 +8,7 @@ import (
 	"magma/orc8r/cloud/go/serdes"
 	"magma/orc8r/cloud/go/services/bootstrapper"
 	"magma/orc8r/cloud/go/services/device"
-	models2 "magma/orc8r/cloud/go/services/orchestrator/obsidian/models"
+	"magma/orc8r/cloud/go/services/orchestrator/obsidian/models"
 	"magma/orc8r/cloud/go/services/tenants"
 	"magma/orc8r/lib/go/protos"
 
@@ -17,8 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type registrationServicer struct {
-}
+type registrationServicer struct {}
 
 func NewRegistrationServicer() (protos.RegistrationServer, error) {
 	return &registrationServicer{}, nil
@@ -29,19 +28,20 @@ func (rs *registrationServicer) Register(c context.Context, request *protos.Regi
 
 	deviceInfo, err := bootstrapper.GetGatewayDeviceInfo(context.Background(), nonce)
 	if err != nil {
-		return formatRegisterResponseError(
-			fmt.Sprintf("could not get device info from nonce %v: %v", nonce, err),
-		), nil
+		clientErr := makeErr(fmt.Sprintf("could not get device info from nonce %v: %v", nonce, err))
+		return clientErr, nil
 	}
 
-	err = registerDevice(*deviceInfo, *request.Hwid, *request.ChallengeKey)
+	err = registerDevice(*deviceInfo, request.Hwid, request.ChallengeKey)
 	if err != nil {
-		return formatRegisterResponseError(fmt.Sprintf("error registering device: %v", err)), nil
+		clientErr := makeErr(fmt.Sprintf("error registering device: %v", err))
+		return clientErr, nil
 	}
 
 	controlProxy, err := getControlProxy(deviceInfo.NetworkId)
 	if err != nil {
-		return formatRegisterResponseError(fmt.Sprintf("error getting control proxy: %v", err)), nil
+		clientErr := makeErr(fmt.Sprintf("error getting control proxy: %v", err))
+		return clientErr, nil
 	}
 
 	res := &protos.RegisterResponse{
@@ -52,16 +52,16 @@ func (rs *registrationServicer) Register(c context.Context, request *protos.Regi
 	return res, nil
 }
 
-func registerDevice(ti protos.GatewayDeviceInfo, hwid protos.AccessGatewayID, challengeKey protos.ChallengeKey) error {
-	cKey := strfmt.Base64(challengeKey.Key)
-	gatewayRecord := &models2.GatewayDevice{HardwareID: hwid.Id,
-		Key: &models2.ChallengeKey{KeyType: challengeKey.KeyType.String(),
-			Key: &cKey}}
+func registerDevice(ti protos.GatewayDeviceInfo, hwid *protos.AccessGatewayID, challengeKey *protos.ChallengeKey) error {
+	challengeKeyBase64 := strfmt.Base64(challengeKey.Key)
+	gatewayRecord := &models.GatewayDevice{
+		HardwareID: hwid.Id,
+		Key: &models.ChallengeKey{KeyType: challengeKey.KeyType.String(), Key: &challengeKeyBase64},
+	}
 	err := device.RegisterDevice(context.Background(), ti.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
 	return err
 }
 
-// TODO(reginawang3495) create ticket for tenants endpoint `GetControlProxyForNetworkID` for exhaustive search
 func getControlProxy(networkID string) (string, error) {
 	ten, err := tenants.GetAllTenants(context.Background())
 	if err != nil {
@@ -91,7 +91,8 @@ func getControlProxy(networkID string) (string, error) {
 	return cp.ControlProxy, nil
 }
 
-func formatRegisterResponseError(errString string) *protos.RegisterResponse {
+// makeErr makes a protos.RegisterResponse_Error for protos.RegisterResponse
+func makeErr(errString string) *protos.RegisterResponse {
 	errRes := &protos.RegisterResponse{
 		Response: &protos.RegisterResponse_Error{
 			Error: errString,
