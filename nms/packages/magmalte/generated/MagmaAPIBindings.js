@@ -1313,6 +1313,7 @@ export type redirect_information = {
     server_address: string,
     support: "DISABLED" | "ENABLED",
 };
+export type registration_token = string;
 export type release_channel = {
     id: channel_id,
     name ? : string,
@@ -2259,7 +2260,7 @@ export default class MagmaAPIBindings {
                 'networkId': string,
                 'gatewayId': string,
             }
-        ): Promise < gateway_device >
+        ): Promise < registration_token >
         {
             let path = '/cwf/{network_id}/gateways/{gateway_id}/device';
             let body;

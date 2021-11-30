@@ -1510,6 +1510,10 @@ definitions:
       key:
         $ref: '#/definitions/challenge_key'
 
+  registration_token:
+    description: A token for the operator to give to the AGW. It keys to logical and network ID.
+    type: string
+
   magmad_gateway_configs:
     type: object
     description: Configuration for the magmad gateway agent

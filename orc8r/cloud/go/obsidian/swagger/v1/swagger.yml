@@ -593,6 +593,10 @@ paths:
           description: The physical device for the gateway
           schema:
             $ref: '#/definitions/gateway_device'
+        "201":
+          description: The physical device for the gateway
+          schema:
+            $ref: '#/definitions/registration_token'
         default:
           $ref: '#/responses/UnexpectedError'
       summary: Get the physical device for a carrier wifi gateway
@@ -11281,6 +11285,10 @@ definitions:
     - address_type
     - server_address
     type: object
+  registration_token:
+    description: A token for the operator to give to the AGW. It keys to logical and
+      network ID.
+    type: string
   release_channel:
     properties:
       id:
