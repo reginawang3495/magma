@@ -592,7 +592,12 @@ paths:
         "200":
           description: The physical device for the gateway
           schema:
-            $ref: '#/definitions/gateway_device'
+            properties:
+              gateway_device:
+                $ref: '#/definitions/gateway_device'
+              registration_token:
+                $ref: '#/definitions/registration_token'
+            type: object
         "201":
           description: The physical device for the gateway
           schema:

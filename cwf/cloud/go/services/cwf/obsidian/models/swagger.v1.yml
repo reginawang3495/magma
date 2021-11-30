@@ -690,11 +690,12 @@ paths:
         '200':
           description: The physical device for the gateway
           schema:
-            $ref: './orc8r-swagger.yml#/definitions/gateway_device'
-        '201':
-          description: The physical device for the gateway
-          schema:
-            $ref: './orc8r-swagger.yml#/definitions/registration_token'
+            type: object
+            properties:
+              registration_token:
+                $ref: './orc8r-swagger.yml#/definitions/registration_token'
+              gateway_device:
+                $ref: './orc8r-swagger.yml#/definitions/gateway_device'
         default:
           $ref: './orc8r-swagger-common.yml#/responses/UnexpectedError'
     put:
