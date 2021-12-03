@@ -46,12 +46,12 @@ func main() {
 		glog.Fatalf("error creating service: %+v", err)
 	}
 
-	bs := createBootstrapperServicer()
-	crs, rs := createRegistrationServicers(srv)
+	bootstrapperServicer := createBootstrapperServicer()
+	cloudRegistrationServicer, registrationServicer := createRegistrationServicers(srv)
 
-	protos.RegisterBootstrapperServer(srv.GrpcServer, bs)
-	protos.RegisterCloudRegistrationServer(srv.GrpcServer, crs)
-	protos.RegisterRegistrationServer(srv.GrpcServer, rs)
+	protos.RegisterBootstrapperServer(srv.GrpcServer, bootstrapperServicer)
+	protos.RegisterCloudRegistrationServer(srv.GrpcServer, cloudRegistrationServicer)
+	protos.RegisterRegistrationServer(srv.GrpcServer, registrationServicer)
 
 	err = srv.Run()
 	if err != nil {
@@ -71,7 +71,7 @@ func createBootstrapperServicer() *servicers.BootstrapperServer {
 
 	servicer, err := servicers.NewBootstrapperServer(rsaPrivateKey)
 	if err != nil {
-		glog.Fatalf("error creating bootstrapper servicer: %+v", err)
+		glog.Fatalf("error creating bootstrapper server: %+v", err)
 	}
 	return servicer
 }
@@ -84,27 +84,28 @@ func createRegistrationServicers(srv *service.OrchestratorService) (protos.Cloud
 	factory := blobstore.NewSQLStoreFactory(bootstrapper.BlobstoreTableName, db, sqorc.GetSqlBuilder())
 	err = factory.InitializeFactory()
 	if err != nil {
-		glog.Fatalf("error initializing tenant database: %+v", err)
+		glog.Fatalf("error initializing bootstrapper database: %+v", err)
 	}
 	store := registration.NewBlobstoreStore(factory)
 
-	str, err := getRootCA()
+	rootCA, err := getRootCA()
 	if err != nil {
 		glog.Fatalf("failed to get rootCA: %+v", err)
 	}
+
 	timeoutDurationInMinutes := srv.Config.MustGetInt(bootstrapper_config.TokenTimeoutDurationInMinutes)
 	timeout := time.Duration(timeoutDurationInMinutes) * time.Minute
-	crs, err := registration.NewCloudRegistrationServicer(store, str, timeout)
+	cloudRegistrationServicer, err := registration.NewCloudRegistrationServicer(store, rootCA, timeout)
 	if err != nil {
 		glog.Fatalf("error creating cloud registration servicer: %+v", err)
 	}
 
-	rs, err := registration.NewRegistrationServicer()
+	registrationServicer, err := registration.NewRegistrationServicer()
 	if err != nil {
 		glog.Fatalf("error creating registration servicer: %+v", err)
 	}
 
-	return crs, rs
+	return cloudRegistrationServicer, registrationServicer
 }
 
 func getRootCA() (string, error) {
