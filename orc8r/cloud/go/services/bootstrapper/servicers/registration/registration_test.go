@@ -31,7 +31,7 @@ import (
 
 var (
 	registerRequest = &protos.RegisterRequest{
-		Token: "someToken",
+		Token: registration.NonceToToken(registration.GenerateNonce(registration.NonceLength)),
 		Hwid: &protos.AccessGatewayID{
 			Id: "Id",
 		},

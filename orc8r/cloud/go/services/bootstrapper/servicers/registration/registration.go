@@ -24,7 +24,10 @@ func NewRegistrationServicer() (protos.RegistrationServer, error) {
 }
 
 func (r *registrationServicer) Register(c context.Context, request *protos.RegisterRequest) (*protos.RegisterResponse, error) {
-	nonce := NonceFromToken(request.Token)
+	nonce, err := NonceFromToken(request.Token)
+	if err != nil {
+		return nil, err
+	}
 
 	deviceInfo, err := bootstrapper.GetGatewayDeviceInfo(context.Background(), nonce)
 	if err != nil {
