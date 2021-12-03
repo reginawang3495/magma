@@ -16,6 +16,8 @@ package main
 import (
 	"crypto/rsa"
 	"flag"
+	"io/ioutil"
+	"time"
 
 	"github.com/golang/glog"
 
@@ -34,7 +36,8 @@ import (
 )
 
 var (
-	keyFilepath = flag.String("cak", "bootstrapper.key.pem", "Bootstrapper's Private Key file")
+	keyFilepath    = flag.String("cak", "bootstrapper.key.pem", "Bootstrapper's Private Key file")
+	rootCAFilePath = "/var/opt/magma/certs/rootCA.pem"
 )
 
 func main() {
@@ -44,7 +47,7 @@ func main() {
 	}
 
 	bs := createBootstrapperServicer()
-	crs, rs := createRegistrationServicers()
+	crs, rs := createRegistrationServicers(srv)
 
 	protos.RegisterBootstrapperServer(srv.GrpcServer, bs)
 	protos.RegisterCloudRegistrationServer(srv.GrpcServer, crs)
@@ -85,12 +88,13 @@ func createRegistrationServicers(srv *service.OrchestratorService) (protos.Cloud
 	}
 	store := registration.NewBlobstoreStore(factory)
 
-	str, err := registration.GetRootCA()
+	str, err := getRootCA()
 	if err != nil {
 		glog.Fatalf("failed to get rootCA: %s", err)
 	}
-	timeoutDurationInMinutes := srv.Config.MustGetBool(bootstrapper_config.TokenTimeoutDurationInMinutes)
-	crs, err := registration.NewCloudRegistrationServicer(store, str, timeoutDurationInMinutes)
+	timeoutDurationInMinutes := srv.Config.MustGetInt(bootstrapper_config.TokenTimeoutDurationInMinutes)
+	timeout := time.Duration(timeoutDurationInMinutes) * time.Minute
+	crs, err := registration.NewCloudRegistrationServicer(store, str, timeout)
 	if err != nil {
 		glog.Fatalf("error creating cloud registration servicer: %s", err)
 	}
@@ -101,4 +105,12 @@ func createRegistrationServicers(srv *service.OrchestratorService) (protos.Cloud
 	}
 
 	return crs, rs
+}
+
+func getRootCA() (string, error) {
+	body, err := ioutil.ReadFile(rootCAFilePath)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
 }

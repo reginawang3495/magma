@@ -1,9 +1,7 @@
 /*
 Copyright 2020 The Magma Authors.
-
 This source code is licensed under the BSD-style license found in the
 LICENSE file in the root directory of this source tree.
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,15 +19,6 @@ import (
 	"github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-<<<<<<< HEAD
-=======
-
-	"magma/orc8r/lib/go/protos"
-)
-
-const (
-	rootCAFilePath = "/var/opt/magma/certs/rootCA.pem"
->>>>>>> 44fa0eb5a (add config)
 
 	"magma/orc8r/cloud/go/clock"
 	"magma/orc8r/lib/go/protos"
@@ -39,15 +28,9 @@ const (
 const NotImplementedWarning = "warning: not implemented"
 
 type cloudRegistrationServicer struct {
-<<<<<<< HEAD
 	store   Store
 	rootCA  string
 	timeout time.Duration
-=======
-	store                    Store
-	rootCA                   string
-	timeoutDurationInMinutes int
->>>>>>> 44fa0eb5a (add config)
 }
 
 func NewCloudRegistrationServicer(store Store, rootCA string, timeout time.Duration) (protos.CloudRegistrationServer, error) {
@@ -139,16 +122,8 @@ func (c *cloudRegistrationServicer) generateAndSaveTokenInfo(networkID string, l
 			NetworkId: networkID,
 			LogicalId: logicalID,
 		},
-<<<<<<< HEAD
 		Nonce:   nonce,
 		Timeout: GetTimestamp(timeout),
-=======
-		Nonce: nonce,
-		Timeout: &timestamp.Timestamp{
-			Seconds: int64(t.Second()),
-			Nanos:   int32(t.Unix()),
-		},
->>>>>>> 44fa0eb5a (add config)
 	}
 
 	err := c.store.SetTokenInfo(tokenInfo)
