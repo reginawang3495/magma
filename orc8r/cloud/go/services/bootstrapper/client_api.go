@@ -16,17 +16,16 @@ package bootstrapper
 import (
 	"context"
 
-	"magma/orc8r/lib/go/protos"
-
-	merrors "magma/orc8r/lib/go/errors"
-	"magma/orc8r/lib/go/registry"
-
 	"github.com/golang/glog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	merrors "magma/orc8r/lib/go/errors"
+	"magma/orc8r/lib/go/protos"
+	"magma/orc8r/lib/go/registry"
 )
 
-func GetToken(ctx context.Context, networkID string, logicalID string, refresh bool) (string, error) {
+var GetToken = func(ctx context.Context, networkID string, logicalID string, refresh bool) (string, error) {
 	client, err := getCloudRegistrationClient()
 	if err != nil {
 		return "", err
@@ -44,7 +43,7 @@ func GetToken(ctx context.Context, networkID string, logicalID string, refresh b
 	return res.Token, err
 }
 
-func GetGatewayRegistrationInfo(ctx context.Context, token string) (*protos.GetGatewayRegistrationInfoResponse, error) {
+var GetGatewayRegistrationInfo = func(ctx context.Context, token string) (*protos.GetGatewayRegistrationInfoResponse, error) {
 	client, err := getCloudRegistrationClient()
 	if err != nil {
 		return nil, err

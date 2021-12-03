@@ -18,15 +18,15 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"magma/orc8r/cloud/go/services/bootstrapper"
 	"magma/orc8r/cloud/go/services/bootstrapper/servicers/registration"
 	"magma/orc8r/cloud/go/services/tenants"
 	tenantsTestInit "magma/orc8r/cloud/go/services/tenants/test_init"
 	"magma/orc8r/lib/go/protos"
-
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -41,13 +41,13 @@ var (
 		},
 	}
 
-	controlProxy = "controlProxy"
+	controlProxy       = "controlProxy"
 	nextTenantID int64 = 0
 )
 
 func TestRegistrationServicer_Register(t *testing.T) {
-	reg, cleanup := setupTestRegistration(t)
-	defer cleanup()
+	reg, testCleanup := setupTestRegistration(t)
+	defer testCleanup()
 
 	res, err := reg.Register(nil, registerRequest)
 	assert.NoError(t, err)
@@ -60,8 +60,8 @@ func TestRegistrationServicer_Register(t *testing.T) {
 func TestRegistrationServicer_Register_BadToken(t *testing.T) {
 	rpcErr := status.Error(codes.NotFound, "errMessage")
 
-	reg, cleanup := setupTestRegistration(t)
-	defer cleanup()
+	reg, testCleanup := setupTestRegistration(t)
+	defer testCleanup()
 	bootstrapper.GetGatewayDeviceInfo = func(ctx context.Context, token string) (*protos.GatewayDeviceInfo, error) {
 		return nil, rpcErr
 	}
@@ -79,8 +79,8 @@ func TestRegistrationServicer_Register_BadToken(t *testing.T) {
 func TestRegistrationServicer_Register_NoControlProxy(t *testing.T) {
 	rpcErr := status.Error(codes.NotFound, "errMessage")
 
-	reg, cleanup := setupTestRegistration(t)
-	defer cleanup()
+	reg, testCleanup := setupTestRegistration(t)
+	defer testCleanup()
 	registration.GetControlProxy = func(networkID string) (string, error) {
 		return "", rpcErr
 	}
@@ -107,8 +107,8 @@ func TestGetControlProxy_NoControlProxy(t *testing.T) {
 	setupAddNetworksToTenantsService(t)
 
 	networkIDTenant := &protos.Tenant{
-		Name:                 "tenant",
-		Networks:             []string{networkID},
+		Name:     "tenant",
+		Networks: []string{networkID},
 	}
 	addTenant(t, networkIDTenant)
 
@@ -121,26 +121,32 @@ func TestGetControlProxy(t *testing.T) {
 	setupAddNetworksToTenantsService(t)
 
 	networkIDTenant := &protos.Tenant{
-		Name:                 "tenant",
-		Networks:             []string{networkID},
+		Name:     "tenant",
+		Networks: []string{networkID},
 	}
 	id := addTenant(t, networkIDTenant)
 
 	ctx := context.Background()
 	err := tenants.CreateOrUpdateControlProxy(ctx, protos.CreateOrUpdateControlProxyRequest{
-		Id:                   id,
-		ControlProxy:         controlProxy,
+		Id:           id,
+		ControlProxy: controlProxy,
 	})
 	assert.NoError(t, err)
-
 	controlProxyRes, err := registration.GetControlProxy(networkID)
 	assert.NoError(t, err)
 	assert.Equal(t, controlProxy, controlProxyRes)
 }
 
 func setupTestRegistration(t *testing.T) (protos.RegistrationServer, func()) {
-	tmpGetControlProxy := registration.GetControlProxy
-	cleanup := func() {registration.GetControlProxy = tmpGetControlProxy}
+	orignalGetGatewayDeviceInfo := bootstrapper.GetGatewayDeviceInfo
+	orignalRegisterDevice := registration.RegisterDevice
+	orignalGetControlProxy := registration.GetControlProxy
+
+	testCleanup := func() {
+		bootstrapper.GetGatewayDeviceInfo = orignalGetGatewayDeviceInfo
+		registration.RegisterDevice = orignalRegisterDevice
+		registration.GetControlProxy = orignalGetControlProxy
+	}
 
 	reg, err := registration.NewRegistrationServicer()
 	assert.NoError(t, err)
@@ -154,18 +160,18 @@ func setupTestRegistration(t *testing.T) (protos.RegistrationServer, func()) {
 	registration.GetControlProxy = func(networkID string) (string, error) {
 		return controlProxy, nil
 	}
-	return reg, cleanup
+	return reg, testCleanup
 }
 
 func setupAddNetworksToTenantsService(t *testing.T) {
 	var (
 		tenant1 = &protos.Tenant{
-			Name:                 "tenant",
-			Networks:             []string{"network1", "network2"},
+			Name:     "tenant",
+			Networks: []string{"network1", "network2"},
 		}
 		tenant2 = &protos.Tenant{
-			Name:                 "tenant",
-			Networks:             []string{"network3", "network4"},
+			Name:     "tenant",
+			Networks: []string{"network3", "network4"},
 		}
 	)
 	tenantsTestInit.StartTestService(t)

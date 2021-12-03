@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-openapi/strfmt"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"magma/orc8r/cloud/go/orc8r"
 	"magma/orc8r/cloud/go/serdes"
 	"magma/orc8r/cloud/go/services/bootstrapper"
@@ -11,13 +15,9 @@ import (
 	"magma/orc8r/cloud/go/services/orchestrator/obsidian/models"
 	"magma/orc8r/cloud/go/services/tenants"
 	"magma/orc8r/lib/go/protos"
-
-	"github.com/go-openapi/strfmt"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-type registrationServicer struct {}
+type registrationServicer struct{}
 
 func NewRegistrationServicer() (protos.RegistrationServer, error) {
 	return &registrationServicer{}, nil
@@ -56,7 +56,7 @@ var RegisterDevice = func(deviceInfo protos.GatewayDeviceInfo, hwid *protos.Acce
 	challengeKeyBase64 := strfmt.Base64(challengeKey.Key)
 	gatewayRecord := &models.GatewayDevice{
 		HardwareID: hwid.Id,
-		Key: &models.ChallengeKey{KeyType: challengeKey.KeyType.String(), Key: &challengeKeyBase64},
+		Key:        &models.ChallengeKey{KeyType: challengeKey.KeyType.String(), Key: &challengeKeyBase64},
 	}
 	err := device.RegisterDevice(context.Background(), deviceInfo.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
 	return err

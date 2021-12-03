@@ -17,6 +17,8 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/golang/protobuf/ptypes/timestamp"
+
 	"magma/orc8r/cloud/go/clock"
 	"magma/orc8r/cloud/go/services/bootstrapper"
 	"magma/orc8r/lib/go/protos"
