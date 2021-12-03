@@ -23,22 +23,22 @@ func NewRegistrationServicer() (protos.RegistrationServer, error) {
 	return &registrationServicer{}, nil
 }
 
-func (rs *registrationServicer) Register(c context.Context, request *protos.RegisterRequest) (*protos.RegisterResponse, error) {
-	nonce := nonceFromToken(request.Token)
+func (r *registrationServicer) Register(c context.Context, request *protos.RegisterRequest) (*protos.RegisterResponse, error) {
+	nonce := NonceFromToken(request.Token)
 
 	deviceInfo, err := bootstrapper.GetGatewayDeviceInfo(context.Background(), nonce)
 	if err != nil {
-		clientErr := makeErr(fmt.Sprintf("could not get device info from nonce %v: %v", nonce, err))
+		clientErr := makeErr(fmt.Sprintf("could not get device info from token %v: %v", request.Token, err))
 		return clientErr, nil
 	}
 
-	err = registerDevice(*deviceInfo, request.Hwid, request.ChallengeKey)
+	err = RegisterDevice(*deviceInfo, request.Hwid, request.ChallengeKey)
 	if err != nil {
 		clientErr := makeErr(fmt.Sprintf("error registering device: %v", err))
 		return clientErr, nil
 	}
 
-	controlProxy, err := getControlProxy(deviceInfo.NetworkId)
+	controlProxy, err := GetControlProxy(deviceInfo.NetworkId)
 	if err != nil {
 		clientErr := makeErr(fmt.Sprintf("error getting control proxy: %v", err))
 		return clientErr, nil
@@ -52,17 +52,18 @@ func (rs *registrationServicer) Register(c context.Context, request *protos.Regi
 	return res, nil
 }
 
-func registerDevice(ti protos.GatewayDeviceInfo, hwid *protos.AccessGatewayID, challengeKey *protos.ChallengeKey) error {
+var RegisterDevice = func(deviceInfo protos.GatewayDeviceInfo, hwid *protos.AccessGatewayID, challengeKey *protos.ChallengeKey) error {
 	challengeKeyBase64 := strfmt.Base64(challengeKey.Key)
 	gatewayRecord := &models.GatewayDevice{
 		HardwareID: hwid.Id,
 		Key: &models.ChallengeKey{KeyType: challengeKey.KeyType.String(), Key: &challengeKeyBase64},
 	}
-	err := device.RegisterDevice(context.Background(), ti.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
+	err := device.RegisterDevice(context.Background(), deviceInfo.NetworkId, orc8r.AccessGatewayRecordType, hwid.Id, gatewayRecord, serdes.Device)
 	return err
 }
 
-func getControlProxy(networkID string) (string, error) {
+var GetControlProxy = func(networkID string) (string, error) {
+	// TODO(#10536) Move functionality to get control_proxy from networkID into tenants service
 	ten, err := tenants.GetAllTenants(context.Background())
 	if err != nil {
 		return "", err
@@ -80,7 +81,7 @@ func getControlProxy(networkID string) (string, error) {
 	}
 
 	if tIDFound == false {
-		return "", status.Errorf(codes.NotFound, "tenantID for current NetworkID %d not found", networkID)
+		return "", status.Errorf(codes.NotFound, "tenantID for current NetworkID %v not found", networkID)
 	}
 
 	cp, err := tenants.GetControlProxy(context.Background(), tID)

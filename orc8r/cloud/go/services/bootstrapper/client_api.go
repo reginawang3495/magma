@@ -60,7 +60,7 @@ func GetGatewayRegistrationInfo(ctx context.Context, token string) (*protos.GetG
 	return res, nil
 }
 
-func GetGatewayDeviceInfo(ctx context.Context, token string) (*protos.GatewayDeviceInfo, error) {
+var GetGatewayDeviceInfo = func(ctx context.Context, token string) (*protos.GatewayDeviceInfo, error) {
 	client, err := getCloudRegistrationClient()
 	if err != nil {
 		return nil, err
