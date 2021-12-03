@@ -79,29 +79,29 @@ func createBootstrapperServicer() *servicers.BootstrapperServer {
 func createRegistrationServicers(srv *service.OrchestratorService) (protos.CloudRegistrationServer, protos.RegistrationServer) {
 	db, err := sqorc.Open(storage2.GetSQLDriver(), storage2.GetDatabaseSource())
 	if err != nil {
-		glog.Fatalf("failed to connect to database: %s", err)
+		glog.Fatalf("failed to connect to database: %+v", err)
 	}
 	factory := blobstore.NewSQLStoreFactory(bootstrapper.BlobstoreTableName, db, sqorc.GetSqlBuilder())
 	err = factory.InitializeFactory()
 	if err != nil {
-		glog.Fatalf("error initializing tenant database: %s", err)
+		glog.Fatalf("error initializing tenant database: %+v", err)
 	}
 	store := registration.NewBlobstoreStore(factory)
 
 	str, err := getRootCA()
 	if err != nil {
-		glog.Fatalf("failed to get rootCA: %s", err)
+		glog.Fatalf("failed to get rootCA: %+v", err)
 	}
 	timeoutDurationInMinutes := srv.Config.MustGetInt(bootstrapper_config.TokenTimeoutDurationInMinutes)
 	timeout := time.Duration(timeoutDurationInMinutes) * time.Minute
 	crs, err := registration.NewCloudRegistrationServicer(store, str, timeout)
 	if err != nil {
-		glog.Fatalf("error creating cloud registration servicer: %s", err)
+		glog.Fatalf("error creating cloud registration servicer: %+v", err)
 	}
 
 	rs, err := registration.NewRegistrationServicer()
 	if err != nil {
-		glog.Fatalf("error creating registration servicer: %s", err)
+		glog.Fatalf("error creating registration servicer: %+v", err)
 	}
 
 	return crs, rs
