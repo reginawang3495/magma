@@ -37,7 +37,7 @@ import (
 
 var (
 	keyFilepath    = flag.String("cak", "bootstrapper.key.pem", "Bootstrapper's Private Key file")
-	rootCAFilePath = "/var/opt/magma/certs/rootCA.pem"
+	rootCAFilepath = "/var/opt/magma/certs/rootCA.pem"
 )
 
 func main() {
@@ -109,7 +109,7 @@ func createRegistrationServicers(srv *service.OrchestratorService) (protos.Cloud
 }
 
 func getRootCA() (string, error) {
-	body, err := ioutil.ReadFile(rootCAFilePath)
+	body, err := ioutil.ReadFile(rootCAFilepath)
 	if err != nil {
 		return "", err
 	}
