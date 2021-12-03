@@ -98,9 +98,9 @@ func TestRegistrationServicer_Register_NoControlProxy(t *testing.T) {
 func TestGetControlProxy_NoNetworkID(t *testing.T) {
 	setupAddNetworksToTenantsService(t)
 
-	controlProxyRes, err := registration.GetControlProxy(networkID)
+	res, err := registration.GetControlProxy(networkID)
 	assert.Equal(t, status.Errorf(codes.NotFound, "tenantID for current NetworkID %v not found", networkID), err)
-	assert.Equal(t, "", controlProxyRes)
+	assert.Equal(t, "", res)
 }
 
 func TestGetControlProxy_NoControlProxy(t *testing.T) {
@@ -112,9 +112,9 @@ func TestGetControlProxy_NoControlProxy(t *testing.T) {
 	}
 	addTenant(t, networkIDTenant)
 
-	controlProxyRes, err := registration.GetControlProxy(networkID)
+	res, err := registration.GetControlProxy(networkID)
 	assert.Equal(t, "Not found", err.Error())
-	assert.Equal(t, "", controlProxyRes)
+	assert.Equal(t, "", res)
 }
 
 func TestGetControlProxy(t *testing.T) {
@@ -125,16 +125,16 @@ func TestGetControlProxy(t *testing.T) {
 		Networks: []string{networkID},
 	}
 	id := addTenant(t, networkIDTenant)
-
 	ctx := context.Background()
 	err := tenants.CreateOrUpdateControlProxy(ctx, protos.CreateOrUpdateControlProxyRequest{
 		Id:           id,
 		ControlProxy: controlProxy,
 	})
 	assert.NoError(t, err)
-	controlProxyRes, err := registration.GetControlProxy(networkID)
+
+	res, err := registration.GetControlProxy(networkID)
 	assert.NoError(t, err)
-	assert.Equal(t, controlProxy, controlProxyRes)
+	assert.Equal(t, controlProxy, res)
 }
 
 func setupTestRegistration(t *testing.T) (protos.RegistrationServer, func()) {
@@ -160,6 +160,7 @@ func setupTestRegistration(t *testing.T) (protos.RegistrationServer, func()) {
 	registration.GetControlProxy = func(networkID string) (string, error) {
 		return controlProxy, nil
 	}
+
 	return reg, testCleanup
 }
 

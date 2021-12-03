@@ -67,27 +67,28 @@ var RegisterDevice = func(deviceInfo protos.GatewayDeviceInfo, hwid *protos.Acce
 
 var GetControlProxy = func(networkID string) (string, error) {
 	// TODO(#10536) Move functionality to get control_proxy from networkID into tenants service
-	ten, err := tenants.GetAllTenants(context.Background())
+	tenantList, err := tenants.GetAllTenants(context.Background())
 	if err != nil {
 		return "", err
 	}
-	var tID int64
-	tIDFound := false
-	for _, t := range ten.GetTenants() {
+
+	var tenantID int64
+	isTenantFound := false
+	for _, t := range tenantList.GetTenants() {
 		for _, n := range t.Tenant.Networks {
 			if n == networkID {
-				tID = t.Id
-				tIDFound = true
+				tenantID = t.Id
+				isTenantFound = true
 				break
 			}
 		}
 	}
 
-	if tIDFound == false {
+	if isTenantFound == false {
 		return "", status.Errorf(codes.NotFound, "tenantID for current NetworkID %v not found", networkID)
 	}
 
-	cp, err := tenants.GetControlProxy(context.Background(), tID)
+	cp, err := tenants.GetControlProxy(context.Background(), tenantID)
 	if err != nil {
 		return "", err
 	}
